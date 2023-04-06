@@ -10,7 +10,6 @@ static void file_reader_empty_file_test(void);
 
 int main(void)
 {
-
     file_reader_normal_file_test();
     file_reader_virtual_file_test();
     file_reader_empty_file_test();
@@ -18,6 +17,9 @@ int main(void)
     return 0;
 }
 
+/*
+    Simulate normal file which has 5 lines with content described under "file content"
+*/
 static void file_reader_normal_file_test(void)
 {
     const char* file_name = "example_file.txt";
@@ -54,6 +56,9 @@ static void file_reader_normal_file_test(void)
     file_reader_delete(fr_normal);
 }
 
+/*
+    Testing virtual file like /proc/stat
+*/
 static void file_reader_virtual_file_test(void)
 {
     File_Reader* fr_virtual = file_reader_new("/proc/stat");
@@ -78,6 +83,9 @@ static void file_reader_virtual_file_test(void)
     file_reader_delete(fr_virtual);
 }
 
+/*
+    Testing normal file like with no content
+*/
 static void file_reader_empty_file_test(void)
 {
     const char* file_name = "example_file_empty.txt";
