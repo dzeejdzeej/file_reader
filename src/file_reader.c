@@ -5,6 +5,18 @@
 #include <string.h>
 #include <sys/stat.h>
 
+#define VIRTUAL_FILE_BUFFER_IN_BYTES 2048
+#define MAX_NO_OF_READ_ATTEMPTS 10
+
+struct File_Reader
+{
+    const char* name;         // file name
+    size_t      no_of_lines;  // number of lines in file
+    size_t*     line_offset;  // buffer for lines offset e.g.: line_offset[1] indicates starting index of line 2
+    size_t      buffer_size;  // size of buffer (size of file + 1)
+    char        buffer[];     // buffer which stores file content extended by '\0' sign 
+};
+
 /***********************************************************
  * LOCAL FUNCTION DECLARATIONS
 ***********************************************************/
@@ -15,18 +27,18 @@ static File_Reader* normal_file_reader_new(const char* file_name);
 static File_Reader* virtual_file_reader_new(const char* file_name);
 static size_t calculate_no_of_lines(const File_Reader* file_reader);
 static void file_reader_calculate_lines_offset(File_Reader* file_reader);
-static size_t calculate_line_length(const File_Reader* file_reader, size_t line);
+static size_t calculate_line_length(const File_Reader* file_reader, const size_t line);
 
 
 /***********************************************************
  * FILE_READER_H API FUNCTIONS DEFINITIONS
 ***********************************************************/
 
-File_Reader* file_reader_new(const char* file_name)
+File_Reader* file_reader_new(const char* const file_name)
 {
     if (file_name == NULL)
     {
-        printf("Icorrect file name: \"%s\"\n", file_name);
+        //printf("Icorrect file name: \"%s\"\n", file_name);
         return NULL;
     }
 
@@ -49,11 +61,11 @@ File_Reader* file_reader_new(const char* file_name)
     return file_reader;    
 }
 
-void file_reader_delete(File_Reader* file_reader)
+void file_reader_delete(File_Reader* const file_reader)
 {
     if (file_reader == NULL)
     {
-        printf("Can't delete file_reader pointed by NULL pointer\n");
+        //printf("Can't delete file_reader pointed by NULL pointer\n");
         return;
     }
 
@@ -65,11 +77,11 @@ void file_reader_delete(File_Reader* file_reader)
     free(file_reader);
 }
 
-size_t file_reader_get_file_size(const File_Reader* file_reader)
+size_t file_reader_get_file_size(const File_Reader* const file_reader)
 {
     if (file_reader == NULL)
     {
-        printf("Can't open given file_reader\n");
+        //printf("Can't open given file_reader\n");
         return 0;
     }
 
@@ -77,33 +89,33 @@ size_t file_reader_get_file_size(const File_Reader* file_reader)
     return file_reader->buffer_size - 1;
 }
 
-size_t file_reader_get_no_of_lines(const File_Reader* file_reader)
+size_t file_reader_get_no_of_lines(const File_Reader* const file_reader)
 {
     if (file_reader == NULL)
     {
-        printf("Can't open given file_reader\n");
+        //printf("Can't open given file_reader\n");
         return 0;       
     }
 
     return file_reader->no_of_lines;
 }
 
-const char* file_reader_get_file_buffer(const File_Reader* file_reader)
+const char* file_reader_get_file_buffer(const File_Reader* const file_reader)
 {
     if (file_reader == NULL)
     {
-        printf("Can't open given file_reader\n");
+        //printf("Can't open given file_reader\n");
         return NULL;
     }
 
     return file_reader->buffer;
 }
 
-char* file_reader_get_copy_of_file_buffer(const File_Reader* file_reader)
+char* file_reader_get_copy_of_file_buffer(const File_Reader* const file_reader)
 {
     if (file_reader == NULL)
     {
-        printf("Can't open given file_reader\n");
+        //printf("Can't open given file_reader\n");
         return NULL;
     }
     
@@ -111,7 +123,7 @@ char* file_reader_get_copy_of_file_buffer(const File_Reader* file_reader)
 
     if (copy_buffer == NULL)
     {
-        printf("Can't create copy_buffer\n");
+        //printf("Can't create copy_buffer\n");
         return NULL;
     }
 
@@ -120,18 +132,18 @@ char* file_reader_get_copy_of_file_buffer(const File_Reader* file_reader)
     return copy_buffer;
 }
 
-void file_reader_delete_copy_of_file_buffer(char* copy_buffer)
+void file_reader_delete_copy_of_file_buffer(char* const copy_buffer)
 {
     if (copy_buffer == NULL)
     {
-        printf("Can't delete buffer pointed by NULL pointer\n");
+        //printf("Can't delete buffer pointed by NULL pointer\n");
         return;
     }
 
     free(copy_buffer);
 }
 
-static File_Reader* normal_file_reader_new(const char* file_name)
+static File_Reader* normal_file_reader_new(const char* const file_name)
 {
     struct stat file_stat_buffer = {0};
     size_t read_attempts_counter = 0;
@@ -155,7 +167,7 @@ static File_Reader* normal_file_reader_new(const char* file_name)
     char* buffer = calloc(buffer_size_in_bytes, sizeof(*buffer));
     if (buffer == NULL)
     {
-        printf("Can't create buffer for normal file: \"%s\"\n", file_name);
+        //printf("Can't create buffer for normal file: \"%s\"\n", file_name);
         return NULL;
     }
 
@@ -164,7 +176,7 @@ static File_Reader* normal_file_reader_new(const char* file_name)
         FILE* const normal_file = fopen(file_name, "r");
         if (normal_file == NULL)
         {
-            printf("Can't open a normal file: \"%s\"\n", file_name);
+            //printf("Can't open a normal file: \"%s\"\n", file_name);
             free(buffer);
             return NULL;
         }
@@ -186,7 +198,7 @@ static File_Reader* normal_file_reader_new(const char* file_name)
             ++read_attempts_counter;
             if (read_attempts_counter >= MAX_NO_OF_READ_ATTEMPTS)
             {
-                printf("Can't perform operations on file \"%s\"\n", file_name);
+                //printf("Can't perform operations on file \"%s\"\n", file_name);
                 free(buffer);
                 return NULL;
             }
@@ -210,7 +222,7 @@ static File_Reader* normal_file_reader_new(const char* file_name)
     
     if (normal_file_reader == NULL)
     {
-        printf("Can't create file reader instance for normal file: \"%s\"\n", file_name);
+        //printf("Can't create file reader instance for normal file: \"%s\"\n", file_name);
         free(buffer);
         return NULL;
     }
@@ -224,12 +236,12 @@ static File_Reader* normal_file_reader_new(const char* file_name)
     return normal_file_reader;
 }
 
-static File_Reader* virtual_file_reader_new(const char* file_name)
+static File_Reader* virtual_file_reader_new(const char* const file_name)
 {
     char* buffer = calloc(VIRTUAL_FILE_BUFFER_IN_BYTES, sizeof(*buffer));
     if (buffer == NULL)
     {
-        printf("Can't create buffer for virtual file: \"%s\"\n", file_name);
+        //printf("Can't create buffer for virtual file: \"%s\"\n", file_name);
         return NULL;
     }
 
@@ -243,7 +255,7 @@ static File_Reader* virtual_file_reader_new(const char* file_name)
 
         if (virtual_file == NULL)
         {
-            printf("Can't open a virtual file: \"%s\"\n", file_name);
+            //printf("Can't open a virtual file: \"%s\"\n", file_name);
             free(buffer);
             return NULL;
         }
@@ -267,7 +279,7 @@ static File_Reader* virtual_file_reader_new(const char* file_name)
             ++read_attempts_counter;
             if (read_attempts_counter >= MAX_NO_OF_READ_ATTEMPTS)
             {
-                printf("Can't perform operations on file \"%s\"\n", file_name);
+                //printf("Can't perform operations on file \"%s\"\n", file_name);
                 free(buffer);
                 return NULL;
             }
@@ -287,19 +299,18 @@ static File_Reader* virtual_file_reader_new(const char* file_name)
         /* If previous statement is not true, it means that the buffer were too small.
            So realease old buffer and create new one with doubled size.
         */
-        printf("Buffer size (%ld bytes) was too small, double the size of buffer \n",
-                buffer_size_in_bytes);
+        //printf("Buffer size (%ld bytes) was too small, double the size of buffer \n", buffer_size_in_bytes);
         free(buffer);
         buffer_size_in_bytes = buffer_size_in_bytes * 2;
         buffer = calloc(buffer_size_in_bytes, sizeof(*buffer));
         if (buffer == NULL)
         {
-            printf("Can't create buffer for virtual file: \"%s\"\n", file_name);
+            //printf("Can't create buffer for virtual file: \"%s\"\n", file_name);
             return NULL;
         }
     }
 
-    // add space for '/0' sign
+    // add space for '\0' sign
     const size_t file_reader_buffer_size = bytes_read_from_file + 1;
     buffer[file_reader_buffer_size - 1] = '\0';
 
@@ -309,7 +320,7 @@ static File_Reader* virtual_file_reader_new(const char* file_name)
     
     if (virtual_file_reader == NULL)
     {
-        printf("Can't create file reader instance for virtual file: \"%s\"\n", file_name);
+        //printf("Can't create file reader instance for virtual file: \"%s\"\n", file_name);
         free(buffer);
         return NULL;
     }
@@ -326,17 +337,17 @@ static File_Reader* virtual_file_reader_new(const char* file_name)
 /*
     Verify if given file name is not null and fetch file stats for given file
 */
-static bool check_file_and_prepare_stats(const char* file_name, struct stat* file_stat_buffer)
+static bool check_file_and_prepare_stats(const char* const file_name, struct stat* const file_stat_buffer)
 {
     if (file_name == NULL)
     {
-        printf("Icorrect file name: \"%s\"\n", file_name);
+        //printf("Icorrect file name: \"%s\"\n", file_name);
         return false;
     }
 
     if (stat(file_name, file_stat_buffer) == -1)
     {
-        printf("Could not fetch file stats correctly for file \"%s\"\n", file_name);
+        //printf("Could not fetch file stats correctly for file \"%s\"\n", file_name);
         return false;
     }
 
@@ -361,7 +372,7 @@ static bool is_file_virtual(const char* const file_name)
     FILE* file = fopen(file_name, "r");
     if (file == NULL)
     {
-        printf("Could not open given file \"%s\"\n", file_name);
+        //printf("Could not open given file \"%s\"\n", file_name);
         return false;
     }
 
@@ -381,11 +392,11 @@ static bool is_file_virtual(const char* const file_name)
     return is_virtual;
 }
 
-static size_t calculate_no_of_lines(const File_Reader* file_reader)
+static size_t calculate_no_of_lines(const File_Reader* const file_reader)
 {
     if (file_reader == NULL)
     {
-        printf("Can't open file_reader\n");
+        //printf("Can't open file_reader\n");
         return 0;
     }
 
@@ -400,7 +411,10 @@ static size_t calculate_no_of_lines(const File_Reader* file_reader)
     const char* ptr = file_reader->buffer;
     const char* ptr_to_last_elem = file_reader->buffer + file_reader->buffer_size;
 
-   while (ptr < ptr_to_last_elem) 
+   /* don't check last two elements since buffer always ends with \n
+      and if last line of file ends with \n it means that there is no more lines
+   */
+   while (ptr < ptr_to_last_elem - 2) 
     {
         if (*ptr == '\n')
         {
@@ -408,15 +422,15 @@ static size_t calculate_no_of_lines(const File_Reader* file_reader)
         }
         ++ptr;
     }
-    
+ 
     return line_counter;
 }
 
-static void file_reader_calculate_lines_offset(File_Reader* file_reader)
+static void file_reader_calculate_lines_offset(File_Reader* const file_reader)
 {
     if (file_reader == NULL)
     {
-        printf("Can't open file_reader\n");
+        //printf("Can't open file_reader\n");
         return;
     }
 
@@ -438,7 +452,7 @@ static void file_reader_calculate_lines_offset(File_Reader* file_reader)
     }
 }
 
-static size_t calculate_line_length(const File_Reader* file_reader, size_t line)
+static size_t calculate_line_length(const File_Reader* const file_reader, const size_t line)
 {
     if (file_reader == NULL)
     {
@@ -447,7 +461,7 @@ static size_t calculate_line_length(const File_Reader* file_reader, size_t line)
 
     if (line > file_reader->no_of_lines || line < 1)
     {
-        printf("Incorrect line number to get\n");
+        //printf("Incorrect line number to get\n");
         return 0;
     }
 
@@ -476,17 +490,17 @@ static size_t calculate_line_length(const File_Reader* file_reader, size_t line)
     return line_length;
 }
 
-char* file_reader_get_copy_of_line(const File_Reader* file_reader, size_t line)
+char* file_reader_get_copy_of_line(const File_Reader* const file_reader, const size_t line)
 {
     if (file_reader == NULL)
     {
-        printf("Can't open given file_reader\n");
+        //printf("Can't open given file_reader\n");
         return NULL;
     }
 
     if (file_reader->buffer_size == 0)
     {
-        printf("Size of file_reader buffer content is 0\n");
+        //printf("Size of file_reader buffer content is 0\n");
         return NULL;
     }
 
@@ -515,7 +529,7 @@ char* file_reader_get_copy_of_line(const File_Reader* file_reader, size_t line)
     return line_buffer;
 }
 
-void file_reader_delete_copy_of_line(char* line_buffer)
+void file_reader_delete_copy_of_line(char* const line_buffer)
 {
     if (line_buffer == NULL)
     {
